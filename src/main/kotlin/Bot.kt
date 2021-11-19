@@ -1,3 +1,5 @@
+import LavaAudioPlayer.AudioPlayerSendHandler
+import LavaAudioPlayer.TrackScheduler
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import dev.kord.common.annotation.KordVoice
@@ -6,13 +8,17 @@ import dev.kord.core.any
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.VoiceChannel
+import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.on
 import dev.kord.rest.NamedFile
+import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.voice.AudioFrame
 import dev.kord.voice.VoiceConnection
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.io.File
+import java.io.InputStream
 import java.net.URL
 
 
@@ -21,7 +27,7 @@ enum class GreetingsType {
     GREET_SENDER, GREET_MENTIONED_USERS, GREET_ALL, NONE
 }
 @OptIn(KordVoice::class)
-class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURL: URL) {
+class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURL: URL, audioPlayer: IAudioPlayer) {
     // If message == @greetinsbot 'greet' then play generic greetings video
     // if message contains greetings at member, then greet specific member
     // if message == "@greetingsbot join and greet"
@@ -30,39 +36,54 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURL: U
     private val allGreetings = "greet all"
 
     init {
-        client.on<dev.kord.core.event.message.MessageCreateEvent> {
+        client.on<MessageCreateEvent> {
             val users = message.mentionedUsers
             if (!users.any { x -> x.isBot }) return@on
             val greetingsType = parseGreetingsType(message)
 
-            message.channel.createMessage {
+            launch(Dispatchers.IO)
+            {
                 val videoInputStream = greetingsVideoURL.openStream()
-                this.files.add(0, NamedFile("greetings.mp4", videoInputStream))
-                when (greetingsType) {
-                    GreetingsType.GREET_SENDER -> {
-                        content = "Greetings ${message.author?.mention}!"
+                message.channel.createMessage {
+                    createGreetingsMessage(this, videoInputStream, greetingsType, this@on)
+                }
+
+                val userVoiceChannel = message.getAuthorAsMember()?.getVoiceState()?.channelId!!
+                val channel = client.getChannelOf<VoiceChannel>(userVoiceChannel)!!
+
+                val connection: VoiceConnection?
+
+                audioPlayer.loadLocalSoundFile(greetingsAudioURL.path)
+
+                connection = channel.connect {
+                    audioProvider { AudioFrame.fromData(audioPlayer.audioData) }
+                }
+
+                launch {
+                    audioPlayer.onPlayerEvent.collect {
+                        when(it) {
+                            PlayerEventType.FINISH -> connection.leave()
+                        }
                     }
-                    GreetingsType.GREET_MENTIONED_USERS -> TODO()
-                    GreetingsType.GREET_ALL -> TODO()
-                    GreetingsType.NONE -> TODO()
                 }
             }
+        }
+    }
 
-            val userVoiceChannel = message.getAuthorAsMember()?.getVoiceState()?.channelId!!
-            val channel = client.getChannelOf<VoiceChannel>(userVoiceChannel)!!
-
-            var connection: VoiceConnection? = null
-            val playerManager = DefaultAudioPlayerManager()
-            AudioSourceManagers.registerLocalSource(playerManager)
-            AudioSourceManagers.registerRemoteSources(playerManager)
-            val player = playerManager.createPlayer()
-            val scheduler = TrackScheduler(player) { runBlocking { connection?.leave()} }
-            player.addListener(scheduler)
-            playerManager.loadItem(greetingsAudioURL.path, AudioPlayerSendHandler(scheduler))
-
-            connection = channel.connect {
-                audioProvider { AudioFrame.fromData(player.provide()?.data) }
+    private fun createGreetingsMessage(
+        userMessageCreateBuilder: UserMessageCreateBuilder,
+        videoInputStream: InputStream,
+        greetingsType: GreetingsType,
+        messageCreateEvent: MessageCreateEvent
+    ) {
+        userMessageCreateBuilder.files.add(0, NamedFile("greetings.mp4", videoInputStream))
+        when (greetingsType) {
+            GreetingsType.GREET_SENDER -> {
+                userMessageCreateBuilder.content = "GREETINGS ${messageCreateEvent.message.author?.mention}!"
             }
+            GreetingsType.GREET_MENTIONED_USERS -> "GREETINGS "
+            GreetingsType.GREET_ALL -> TODO()
+            GreetingsType.NONE -> TODO()
         }
     }
 

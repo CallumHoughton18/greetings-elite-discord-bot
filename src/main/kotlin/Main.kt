@@ -1,3 +1,4 @@
+import LavaAudioPlayer.LavaAudioPlayer
 import dev.kord.core.Kord
 
 private val BOT_TOKEN = try {
@@ -13,6 +14,7 @@ suspend fun main(args: Array<String>) {
     val greetingsAudio = ClassLoader.getSystemResource("greetings.mp3")
 
     val client = Kord(BOT_TOKEN)
-    val bot = Bot(client, greetingsVid, greetingsAudio)
+    val audioPlayer = LavaAudioPlayer()
+    val bot = Bot(client, greetingsVid, greetingsAudio, audioPlayer)
     bot.start()
 }
