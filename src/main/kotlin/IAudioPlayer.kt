@@ -7,5 +7,5 @@ interface IAudioPlayer {
     val audioData: ByteArray?
     val onPlayerEvent: Flow<PlayerEventType>
     fun initializePlayer()
-    fun loadLocalSoundFile(audioPath: String)
+    fun loadSoundFromUrl(urlPath: String)
 }

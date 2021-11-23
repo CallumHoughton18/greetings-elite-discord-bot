@@ -24,7 +24,7 @@ enum class GreetingsType {
     GREET_SENDER, GREET_MENTIONED_USERS, NONE
 }
 @OptIn(KordVoice::class)
-class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURL: URL, audioPlayer: IAudioPlayer) {
+class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURLString: String, audioPlayer: IAudioPlayer) {
     // If message == @greetingsbot 'greet' then play generic greetings video
     // if message contains greetings at member, then greet specific member
     // if message == "@greetingsbot join and greet"
@@ -50,7 +50,7 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURL: U
                         val channel = client.getChannelOf<VoiceChannel>(snowflake) ?: return@let
                         val connection: VoiceConnection?
 
-                        audioPlayer.loadLocalSoundFile(greetingsAudioURL.path)
+                        audioPlayer.loadSoundFromUrl(greetingsAudioURLString)
 
                         connection = channel.connect {
                             audioProvider { AudioFrame.fromData(audioPlayer.audioData) }

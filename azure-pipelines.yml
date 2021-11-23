@@ -11,7 +11,7 @@ steps:
     javaHomeOption: 'JDKVersion'
     jdkVersionOption: '1.8'
     jdkArchitectureOption: 'x64'
-    tasks: 'build'
+    tasks: 'build shadowJar'
 - task: PublishBuildArtifacts@1
   displayName: 'Publishing build artifacts'
   inputs:

@@ -55,6 +55,7 @@ class TrackScheduler(private val player: AudioPlayer) : AudioEventAdapter() {
     override fun onTrackEnd(player: AudioPlayer?, track: AudioTrack?, endReason: AudioTrackEndReason?) {
         if (endReason == AudioTrackEndReason.FINISHED) {
             runBlocking {
+                    println("Finished playing audio")
                     _onPlayerEvent.emit(PlayerEventType.FINISH)
             }
         }

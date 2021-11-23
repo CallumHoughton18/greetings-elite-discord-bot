@@ -5,13 +5,7 @@ import PlayerEventType
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
-import kotlinx.coroutines.channels.sendBlocking
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.runBlocking
 
 class LavaAudioPlayer : IAudioPlayer {
 
@@ -28,7 +22,9 @@ class LavaAudioPlayer : IAudioPlayer {
     }
 
     override val audioData: ByteArray?
-        get() = player.provide()?.data
+        get() {
+            return player.provide()?.data
+        }
 
     override val onPlayerEvent: Flow<PlayerEventType> = scheduler.onPlayerEvent
 
@@ -36,7 +32,8 @@ class LavaAudioPlayer : IAudioPlayer {
         TODO("Not yet implemented")
     }
 
-    override fun loadLocalSoundFile(audioPath: String) {
-        playerManager.loadItem(audioPath, AudioPlayerSendHandler(scheduler))
+    override fun loadSoundFromUrl(urlPath: String) {
+        playerManager.loadItem(urlPath, AudioPlayerSendHandler(scheduler))
+        println("Loaded audio from: $urlPath")
     }
 }
