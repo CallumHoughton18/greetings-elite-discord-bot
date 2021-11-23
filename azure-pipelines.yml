@@ -1,0 +1,22 @@
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: Gradle@2
+  displayName: 'Building the Application'
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8'
+    jdkArchitectureOption: 'x64'
+    tasks: 'build'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publishing Build Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'elite-bot-app'
+    publishLocation: 'Container'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+
