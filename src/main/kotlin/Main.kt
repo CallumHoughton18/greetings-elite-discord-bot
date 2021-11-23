@@ -4,8 +4,11 @@ import java.io.File
 import java.net.URL
 import java.nio.file.Path
 
-private val BOT_TOKEN = "OTEyODAwNTEwNjYxMjU5Mjc0.YZ1NuA.N5viMBCL3w4xCUWz0z14HrEy-5Y"
-
+private val BOT_TOKEN = try {
+    System.getenv("BOT_TOKEN")
+} catch (error: Exception) {
+    throw RuntimeException("Failed to load bot token. Make sure the BOT_TOKEN environment variable is set", error)
+}
 
 suspend fun main(args: Array<String>) {
     val greetingsVid = ClassLoader.getSystemResource("greetings.mp4")
