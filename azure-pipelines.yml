@@ -3,7 +3,7 @@ pool:
 
 steps:
 - task: Gradle@2
-  displayName: 'Building the Application'
+  displayName: 'Building the application via Gradle'
   inputs:
     workingDirectory: ''
     gradleWrapperFile: 'gradlew'
@@ -13,10 +13,33 @@ steps:
     jdkArchitectureOption: 'x64'
     tasks: 'build'
 - task: PublishBuildArtifacts@1
-  displayName: 'Publishing Build Artifacts'
+  displayName: 'Publishing build artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'elite-bot-app'
     publishLocation: 'Container'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-
+- task: Docker@2
+  inputs:
+    containerRegistry: 'Personal DockerHub'
+    command: 'login'
+- task: DockerCompose@0
+  displayName: 'Building discord bot via Docker-Compose...'
+  inputs:
+    containerregistrytype: 'Container Registry'
+    dockerRegistryEndpoint: 'Personal DockerHub'
+    dockerComposeFile: '**/docker-compose.yml'
+    action: 'Build services'
+    additionalImageTags: '$(Build.BuildId)'
+    includeLatestTag: true
+- task: DockerCompose@0
+  displayName: 'Pushing discord bot via Docker-Compose...'
+  inputs:
+    containerregistrytype: 'Container Registry'
+    dockerRegistryEndpoint: 'Personal DockerHub'
+    dockerComposeFile: '**/docker-compose.yml'
+    action: 'Push services'
+    qualifyImageNames: true
+    additionalImageTags: '$(Build.BuildId)'
+    includeLatestTag: true
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
