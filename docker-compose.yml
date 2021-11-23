@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  halo-elite-greetings-discord-bot:
+    image: callumhoughton22/halo-elite-greetings-discord-bot
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}

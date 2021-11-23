@@ -70,3 +70,4 @@ outTmp/
 /kotlin-native/dist
 kotlin-ide/
 /src/main/resources/bot-token.txt
+.env
