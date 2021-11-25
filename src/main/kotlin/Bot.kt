@@ -12,11 +12,14 @@ import dev.kord.rest.NamedFile
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.voice.AudioFrame
 import dev.kord.voice.VoiceConnection
+import dev.kord.voice.exception.VoiceConnectionInitializationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.net.URL
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 
 // Maybe dictionary of enum to method to enact would work better?
@@ -31,12 +34,23 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURLStr
     private val personalGreetings = arrayOf("hello", "greet me", "greetings", "greet")
     private val otherUserGreetings = arrayOf("greet them", "greet", "say hello to")
     private val botId = client.selfId
+    private val maxTimeBetweenMessagesSeconds = 7
+
+    private val antiSpamMap: ConcurrentHashMap<Snowflake, Instant> = ConcurrentHashMap()
 
     init {
         client.on<MessageCreateEvent> {
             val users = message.mentionedUsers
+            val author = message.author?.id ?: return@on
             if (!users.any { x -> x.id == botId }) return@on
+
+            val currentDateTime = Instant.now()
             val greetingsType = parseGreetingsType(message)
+
+            if (antiSpamMap.containsKey(author)) {
+                val lastMsgTime = antiSpamMap[author] ?: return@on
+                if (currentDateTime.epochSecond - lastMsgTime.epochSecond < maxTimeBetweenMessagesSeconds) return@on
+            }
 
             launch(Dispatchers.IO)
             {
@@ -66,8 +80,12 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURLStr
                     }
                 } catch (ex: EntityNotFoundException) {
                     println("User not in voice channel, skipping voice connection")
+                } catch(ex: VoiceConnectionInitializationException) {
+                    println("Gobbled Kord VoiceConnection initialization error, this can happen if the user spams the bot" +
+                            "to join a voice channel...: ${ex.message}")
                 }
             }
+            antiSpamMap[author] = currentDateTime
         }
     }
 

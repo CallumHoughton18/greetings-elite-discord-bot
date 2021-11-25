@@ -9,3 +9,4 @@ services:
       dockerfile: Dockerfile
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
+      - GREETINGS_AUDIO_LINK=https://www.youtube.com/watch?v=c_w2Nh-mxH4

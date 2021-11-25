@@ -10,17 +10,21 @@ private val BOT_TOKEN = try {
     throw RuntimeException("Failed to load bot token. Make sure the BOT_TOKEN environment variable is set", error)
 }
 
+// LavaPlayer can't play local sound files when compiled into a jar
+// so an AWFUL work around is just pipe the audio from YouTube ?!?!?!
+private val GREETINGS_AUDIO_LINK = try {
+    System.getenv("GREETINGS_AUDIO_LINK")
+} catch (error: Exception) {
+    throw RuntimeException("Failed to load greetings video link. Make sure the GREETINGS_AUDIO_LINK environment variable is set",
+    error)
+}
+
 suspend fun main(args: Array<String>) {
     val greetingsVid = ClassLoader.getSystemResource("greetings.mp4")
     @Suppress("BlockingMethodInNonBlockingContext")
-    // LavaPlayer can't play local sound files when compiled into a jar
-    // so an AWFUL work around is just pipe the audio from YouTube ?!?!?!
-    // Would never choose to do this in Kotlin again imo
-    // hard coded URL because I cba working on this anymore
-    val greetingsAudio = "https://www.youtube.com/watch?v=c_w2Nh-mxH4"
 
     val client = Kord(BOT_TOKEN)
     val audioPlayer = LavaAudioPlayer()
-    val bot = Bot(client, greetingsVid, greetingsAudio, audioPlayer)
+    val bot = Bot(client, greetingsVid, GREETINGS_AUDIO_LINK, audioPlayer)
     bot.start()
 }
