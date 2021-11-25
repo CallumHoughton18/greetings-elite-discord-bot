@@ -1,6 +1,8 @@
 # Halo Elite Greetings Discord Bot
 
-![WORT WORT WORT](./src/main/resources/greetings.mp4)
+WORT WORT WORT
+
+https://user-images.githubusercontent.com/14128720/143498403-f88f58ac-f298-40e5-b7bf-b763e273bb44.mp4
 
 Built using Kotlin, Kord, and Lava Player!
 
