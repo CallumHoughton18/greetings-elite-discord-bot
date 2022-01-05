@@ -3,6 +3,7 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.any
 import dev.kord.core.behavior.channel.createMessage
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.core.event.message.MessageCreateEvent
@@ -15,6 +16,7 @@ import dev.kord.voice.VoiceConnection
 import dev.kord.voice.exception.VoiceConnectionInitializationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.net.URL
@@ -60,7 +62,8 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURLStr
                 }
 
                 try {
-                    message.getAuthorAsMember()?.getVoiceState()?.channelId?.let { snowflake ->
+                    val memberForVoice = getFirstMentionedUserAsMemberOrNull(message) ?: message.getAuthorAsMember()
+                    memberForVoice?.getVoiceState()?.channelId?.let { snowflake ->
                         val channel = client.getChannelOf<VoiceChannel>(snowflake) ?: return@let
                         val connection: VoiceConnection?
 
@@ -87,6 +90,12 @@ class Bot(private val client: Kord, greetingsVideoURL: URL, greetingsAudioURLStr
             }
             antiSpamMap[author] = currentDateTime
         }
+    }
+
+    private suspend fun getFirstMentionedUserAsMemberOrNull(message: Message): Member? {
+        val guild = message.getGuildOrNull() ?: return null
+        val firstMentionedUser = message.mentionedUsers.firstOrNull{ user -> user.id != botId } ?: return null
+        return firstMentionedUser.asMember(guild.id)
     }
 
     private fun createGreetingsMessage(
